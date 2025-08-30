@@ -615,11 +615,10 @@
 
         setTyping(true);
 
-        // Hard-coded reply for creator question
-        if (asksCreator(userText.trim())) {
-          const reply = `Powered by MONIRUL HASAN TALHA ✨ পুরো বায়ো ও প্রোজেক্টস: <a href="https://talha388204.github.io/Bio-Data/" target="_blank" rel="noopener noreferrer" class="btn">ভিজিট করুন</a>`;
-
-          await saveMessage({
+// Hard-coded reply for creator question
+if (asksCreator(userText.trim())) {
+  const reply = "Powered by MONIRUL HASAN TALHA ✨..How can i help you?"
+        await saveMessage({
             text: reply,
             sender: 'bot',
             userId: currentUser?.uid || 'guest'
