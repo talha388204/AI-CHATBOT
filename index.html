@@ -1,0 +1,378 @@
+<!DOCTYPE html><html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI mini ChatBot by Talha</title>
+  <meta name="theme-color" content="#121212" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bg:#0f0f10;              /* Deep dark */
+      --panel:rgba(255,255,255,.06);
+      --panel-2:rgba(255,255,255,.08);
+      --glass:rgba(255,255,255,.05);
+      --border:rgba(255,255,255,.12);
+      --text:#e7e7ea;            /* Primary text */
+      --sub:#b5b5be;             /* Secondary */
+      --brand:#1DB954;           /* Spotify green */
+      --brand-2:#1ed760;
+      --danger:#ff5d5d;
+      --shadow:0 10px 30px rgba(0,0,0,.45);
+      --radius:20px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at -10% -10%, rgba(29,185,84,.12), transparent 50%),
+        radial-gradient(900px 700px at 110% 10%, rgba(116,255,199,.10), transparent 55%),
+        radial-gradient(1200px 800px at 50% 120%, rgba(29,185,84,.10), transparent 50%),
+        linear-gradient(180deg,#0c0d0d,#121314 60%, #0f0f10);
+      overflow:hidden;
+    }
+    .app{ display:grid; grid-template-rows:auto 1fr auto; height:100%; max-width:1100px; margin:0 auto; padding:16px; gap:14px; }
+    .header{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:var(--panel); backdrop-filter:blur(14px); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); }
+    .brand{ display:flex; gap:12px; align-items:center; }
+    .brand .dot{width:12px; height:12px; border-radius:50%; background:var(--brand); box-shadow:0 0 12px var(--brand)}
+    .title{font-weight:800; letter-spacing:.2px}
+    .subtitle{color:var(--sub); font-size:12px}
+    .profile{display:flex; align-items:center; gap:10px}
+    .avatar{width:34px; height:34px; border-radius:50%; border:1px solid var(--border)}
+    .btn{cursor:pointer; border:none; outline:none; padding:10px 14px; border-radius:14px; font-weight:600; background:linear-gradient(180deg,var(--brand-2),var(--brand)); color:#08110a; box-shadow:0 8px 20px rgba(29,185,84,.25); transition:transform .1s ease, box-shadow .2s ease, filter .2s ease; }
+    .btn:hover{transform:translateY(-1px)}
+    .btn.secondary{background:var(--panel-2); color:var(--text); box-shadow:none; border:1px solid var(--border)}.gate{ display:grid; place-items:center; height:100%; gap:16px; }
+.card{ width:min(560px,92vw); padding:22px; border-radius:var(--radius); background:var(--panel); backdrop-filter:blur(14px); border:1px solid var(--border); box-shadow:var(--shadow); }
+.card h2{margin:.2rem 0 6px}
+.card p{margin:0; color:var(--sub)}
+
+.chat{ display:grid; grid-template-rows:1fr auto; gap:12px; background:var(--panel); backdrop-filter:blur(14px); border:1px solid var(--border); border-radius:var(--radius); padding:10px; box-shadow:var(--shadow); min-height:0; }
+.messages{ overflow:auto; padding:8px; display:flex; flex-direction:column; gap:10px; scroll-behavior:smooth; }
+.bubble{ max-width:min(82%, 740px); padding:12px 14px; border-radius:16px; line-height:1.35; position:relative; word-wrap:break-word; border:1px solid var(--border); }
+.bubble.user{ align-self:flex-end; background:linear-gradient(180deg, rgba(116,255,199,.09), rgba(29,185,84,.08)); }
+.bubble.bot{ align-self:flex-start; background:rgba(255,255,255,.04); }
+.meta{margin-top:6px; font-size:11px; color:var(--sub)}
+.row{display:flex; gap:10px; align-items:center}
+.input{ display:flex; gap:10px; align-items:center; padding:10px; background:var(--glass); border:1px solid var(--border); border-radius:16px; }
+.text{ flex:1; background:transparent; border:none; outline:none; color:var(--text); font-size:16px; padding:10px; min-height:22px; }
+.send{min-width:44px}
+.hint{font-size:12px; color:var(--sub)}
+.typing{font-size:12px; color:var(--sub); padding:0 6px 6px}
+
+@media (max-width:640px){ .app{padding:10px; gap:10px} .header{padding:10px} .btn{padding:9px 12px} .bubble{max-width:92%} }
+.messages::-webkit-scrollbar{height:10px;width:10px}
+.messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12); border-radius:10px}
+.messages::-webkit-scrollbar-track{background:transparent}
+code, pre{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;}
+
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">
+        <div class="dot" aria-hidden="true"></div>
+        <div>
+          <div class="title">AI mini ChatBot by Talha</div>
+          <div class="subtitle">Firebase + Gemini • Spotify-style</div>
+        </div>
+      </div>
+      <div class="profile" id="profile">
+        <button class="btn" id="loginBtn">Google Sign in</button>
+      </div>
+    </header><!-- Auth Gate (shows when logged out) -->
+<section class="gate" id="gate">
+  <div class="card">
+    <h2>লগ-ইন করে শুরু করো</h2>
+    <p>Google দিয়ে সাইন-ইন করলে তোমার চ্যাট নিরাপদে Firestore-এ সেভ থাকবে।</p>
+    <div style="display:flex; gap:10px; margin-top:14px">
+      <button class="btn" id="loginBtn2">Sign in with Google</button>
+      <button class="btn secondary" id="guestBtn">Guest Mode</button>
+    </div>
+    <p class="hint" style="margin-top:10px">নোট: ডেমো হিসেবে সরাসরি ব্রাউজার থেকে Gemini API কল করা হচ্ছে।
+      প্রোডাকশনে ব্যাকএন্ড proxy রাখা ভালো।</p>
+  </div>
+</section>
+
+<!-- Chat Area (shows when logged in / guest) -->
+<main class="chat" id="chat" style="display:none">
+  <div class="messages" id="messages" aria-live="polite"></div>
+  <div class="typing" id="typing" style="display:none">Bot is typing…</div>
+  <form class="row input" id="form">
+    <input id="text" class="text" placeholder="তোমার বার্তা লিখো… (Ctrl/⌘ + Enter to send)" autocomplete="off" />
+    <button class="btn send" id="sendBtn" title="Send" type="submit">➤</button>
+  </form>
+  <div class="hint">Tip: Shift+Enter = নতুন লাইন</div>
+</main>
+
+<!-- Footer -->
+<footer class="subtitle" style="text-align:center">
+  © <span id="year"></span> AI mini ChatBot by Talha • Made with Firebase & Gemini
+</footer>
+
+  </div>  <!-- App Script (Module) -->  <script type="module">
+    /* ===============================
+       Firebase + Gemini Chat (Client)
+       =============================== */
+
+    // --- Firebase SDKs (v12) ---
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
+
+    // --- Config (from you) ---
+    const firebaseConfig = {
+      apiKey: 'AIzaSyDJ30k3wszDUdPk36g6QGNeatQzLgQdDiU',
+      authDomain: 'e-commerce-f7ca6.firebaseapp.com',
+      projectId: 'e-commerce-f7ca6',
+      storageBucket: 'e-commerce-f7ca6.firebasestorage.app',
+      messagingSenderId: '440939941324',
+      appId: '1:440939941324:web:638a952b995ae5914d6169'
+    };
+
+    // Google Generative AI (Gemini) — browser key (you said exposure is okay)
+    const GEMINI_API_KEY = 'AIzaSyCuJiwUzOBgBOYArAu-6rStNUWpaBI81Rg';
+    const GEMINI_MODEL = 'gemini-1.5-flash';
+
+    // --- Init ---
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // --- UI Refs ---
+    const yearEl = document.getElementById('year');
+    yearEl.textContent = new Date().getFullYear();
+    const loginBtn = document.getElementById('loginBtn');
+    const loginBtn2 = document.getElementById('loginBtn2');
+    const guestBtn = document.getElementById('guestBtn');
+    const profile = document.getElementById('profile');
+    const gate = document.getElementById('gate');
+    const chat = document.getElementById('chat');
+    const messagesEl = document.getElementById('messages');
+    const typingEl = document.getElementById('typing');
+    const form = document.getElementById('form');
+    const text = document.getElementById('text');
+
+    // --- State ---
+    let currentUser = null;                // firebase user or guest stub
+    let unsubMessages = null;              // firestore listener
+    let sending = false;
+
+    // --- Helpers ---
+    const fmtTime = ts => {
+      try{
+        const d = ts?.toDate ? ts.toDate() : (ts instanceof Date ? ts : new Date());
+        return d.toLocaleString('bn-BD', { hour: 'numeric', minute: '2-digit', hour12: true, day:'2-digit', month:'short' });
+      }catch(e){ return '' }
+    }
+    const escapeHTML = (str='') => str
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+    const scrollToBottom = () => {
+      messagesEl?.lastElementChild?.scrollIntoView({behavior:'smooth', block:'end'});
+    }
+
+    const setTyping = (v) => typingEl.style.display = v ? 'block' : 'none';
+
+    const renderMessage = (m) => {
+      const wrap = document.createElement('div');
+      wrap.className = bubble ${m.sender};
+
+      // Basic markdown-ish for code blocks (fixed: avoid "$1" replacement issue)
+      const textHtml = escapeHTML(m.text)
+        .replace(/([\s\S]*?)/g, function(_, g){ return '<pre><code>'+g+'</code></pre>'; }).replace(/\n/g,'<br/>');
+
+  wrap.innerHTML = ${textHtml}<div class="meta">${m.sender==='user'?'You':'Bot'} • ${fmtTime(m.timestamp)}</div>;
+  messagesEl.appendChild(wrap);
+}
+
+const clearMessages = () => { messagesEl.innerHTML = '' }
+
+// --- Firestore paths ---
+const userMessagesCol = (uid) => collection(db, 'chats', uid, 'messages');
+
+// --- Auth flows ---
+const provider = new GoogleAuthProvider();
+
+async function login(){
+  try{ await signInWithPopup(auth, provider); }catch(e){ alert('Sign-in failed: '+e.message) }
+}
+async function logout(){
+  try{ await signOut(auth); }catch(e){ alert('Sign-out failed: '+e.message) }
+}
+
+function enterGuest(){
+  // Lightweight guest identity
+  currentUser = { uid: 'guest-'+crypto.randomUUID(), displayName:'Guest', photoURL:'' };
+  gate.style.display = 'none';
+  chat.style.display = 'grid';
+  setupMessagesListener();
+  renderSystemIntro();
+  updateProfileUI();
+}
+
+function updateProfileUI(){
+  profile.innerHTML = '';
+  const name = document.createElement('div');
+  name.style.fontSize = '12px';
+  name.style.color = 'var(--sub)';
+  name.textContent = currentUser?.displayName || 'Guest';
+  const img = document.createElement('img');
+  img.className = 'avatar';
+  img.alt = 'avatar';
+  img.src = currentUser?.photoURL || 'https://ui-avatars.com/api/?background=1DB954&color=0f0f10&name=G';
+  const out = document.createElement('button');
+  out.className = 'btn secondary';
+  out.textContent = 'Log out';
+  out.onclick = async()=>{
+    if(currentUser?.uid?.startsWith('guest-')){
+      // guest -> reset UI
+      currentUser = null;
+      if(unsubMessages) unsubMessages();
+      gate.style.display = 'grid';
+      chat.style.display = 'none';
+      profile.innerHTML = '<button class="btn" id="loginBtn">Google Sign in</button>';
+      clearMessages();
+      bindTopButtons(); // ensure header login works after reset
+    } else { await logout(); }
+  }
+  profile.append(img, name, out);
+}
+
+function bindTopButtons(){
+  const b = document.getElementById('loginBtn');
+  if(b) b.onclick = login;
+}
+
+// Firebase auth state
+onAuthStateChanged(auth, (user)=>{
+  if(user){
+    currentUser = user;
+    gate.style.display = 'none';
+    chat.style.display = 'grid';
+    updateProfileUI();
+    setupMessagesListener();
+    renderSystemIntro();
+  } else if(!currentUser){
+    // no logged-in user & not a guest
+    gate.style.display = 'grid';
+    chat.style.display = 'none';
+    clearMessages();
+    bindTopButtons();
+  }
+});
+
+// --- Messages Realtime ---
+function setupMessagesListener(){
+  if(unsubMessages) unsubMessages();
+  const q = query(userMessagesCol(currentUser.uid), orderBy('timestamp','asc'));
+  unsubMessages = onSnapshot(q, (snap)=>{
+    messagesEl.innerHTML = '';
+    snap.forEach(doc=>{
+      const m = doc.data();
+      renderMessage(m);
+    });
+    scrollToBottom();
+  }, (err)=> console.error('onSnapshot err', err));
+}
+
+function renderSystemIntro(){
+  if(messagesEl.childElementCount === 0){
+    const intro = { sender:'bot', text:'হাই! আমি AI mini ChatBot by Talha. আমাকে যেকোনো প্রশ্ন করতে পারো।', timestamp:new Date() };
+    renderMessage(intro);
+  }
+}
+
+// --- Send message ---
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(sending) return; // basic throttle
+  const val = text.value.trim();
+  if(!val) return;
+  sending = true;
+  text.value = '';
+
+  try{
+    await addDoc(userMessagesCol(currentUser.uid), {
+      userId: currentUser.uid,
+      text: val,
+      sender: 'user',
+      timestamp: serverTimestamp()
+    });
+    scrollToBottom();
+    setTyping(true);
+    const reply = await askGemini(await getRecentConversation(currentUser.uid));
+    await addDoc(userMessagesCol(currentUser.uid), {
+      userId: currentUser.uid,
+      text: reply,
+      sender: 'bot',
+      timestamp: serverTimestamp()
+    });
+  }catch(err){
+    console.error(err);
+    alert('Send failed: '+(err?.message||err));
+  } finally {
+    setTyping(false);
+    sending = false;
+    scrollToBottom();
+  }
+});
+
+// Keyboard shortcuts
+text.addEventListener('keydown', (e)=>{
+  if((e.ctrlKey||e.metaKey) && e.key === 'Enter'){ form.requestSubmit(); }
+});
+
+// Buttons
+loginBtn?.addEventListener('click', login);
+loginBtn2?.addEventListener('click', login);
+guestBtn?.addEventListener('click', enterGuest);
+
+// --- Build conversation context for Gemini ---
+async function getRecentConversation(uid){
+  const nodes = Array.from(messagesEl.querySelectorAll('.bubble'));
+  const last = nodes.slice(-12).map(n=>{
+    const who = n.classList.contains('user') ? 'user' : 'bot';
+    const content = n.firstChild?.textContent || n.textContent || '';
+    return { role: who, text: content };
+  });
+  return last;
+}
+
+// --- Call Gemini REST API ---
+async function askGemini(history){
+  const sys = {
+    role: 'user',
+    parts: [{ text: System instructions: You are a helpful Bangla-first assistant. Keep answers concise unless asked. }]
+  };
+  const contents = [sys].concat(history.map(m=>({
+    role: m.role === 'user' ? 'user' : 'model',
+    parts: [{ text: m.text }]
+  })));
+
+  try{
+    const res = await fetch(https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY} ,{
+      method:'POST', headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ contents, generationConfig: { temperature: 0.7, maxOutputTokens: 512 } })
+    });
+    if(!res.ok){
+      const t = await res.text();
+      throw new Error(Gemini error ${res.status}: ${t});
+    }
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'দুঃখিত, আমি উত্তর আনতে পারিনি।';
+    return text;
+  }catch(e){
+    console.error('Gemini call failed', e);
+    if(String(e).includes('429')) return '⚠ আজকের ফ্রি লিমিট শেষ। পরে চেষ্টা করো বা API quota বাড়াও।';
+    return '⚠ নেটওয়ার্ক/কী সমস্যা। পরে চেষ্টা করো বা API key চেক করো।';
+  }
+}
+
+  </script>
+</body>
+</html>
