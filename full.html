@@ -104,7 +104,7 @@
           <button class="btn secondary" id="guestBtn">Guest Mode</button>
         </div>
         <div id="authStatus"></div>
-        <p class="hint" style="margin-top:10px">নোট: ডেমো হিসেবে ব্রাউজার থেকে Gemini API কল করা হচ্ছে। প্রোডে ব্যাকএন্ড proxy ব্যবহার করো।</p>
+        <p class="hint" style="margin-top:10px">নোট: ব্রাউজার থেকে Gemini API কল করা হচ্ছে।</p>
       </div>
     </section>
 
@@ -618,20 +618,8 @@
 
         // Hard-coded reply for creator question
         if (asksCreator(userText.trim())) {
-          const reply = 'Powered by MONIRUL HASAN TALHA ✨ পুরো বায়ো ও প্রোজেক্টস: <a href="https://talha388204.github.io/Bio-Data/" target="_blank" rel="noopener noreferrer" class="btn">ভিজিট করুন</a>
+          const reply = `Powered by MONIRUL HASAN TALHA ✨ পুরো বায়ো ও প্রোজেক্টস: <a href="https://talha388204.github.io/Bio-Data/" target="_blank" rel="noopener noreferrer" class="btn">ভিজিট করুন</a>`;
 
-<style>
-  .btn {
-    display: inline-block;
-    padding: 10px 16px;
-    border-radius: 10px;
-    text-decoration: none;
-    background: #4f46e5;
-    color: white;
-    font-weight: 600;
-  }
-  .btn:hover { opacity: 0.9; }
-</style>';
           await saveMessage({
             text: reply,
             sender: 'bot',
