@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI mini ChatBot by Talha</title>
+  <meta name="theme-color" content="#121212" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* your existing CSS untouched */
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="header">
+      <div class="brand">
+        <div class="dot"></div>
+        <div>
+          <div class="title">AI mini ChatBot by Talha</div>
+          <div class="subtitle">Firebase + Gemini • Spotify-style</div>
+        </div>
+      </div>
+      <div class="profile" id="profile">
+        <button class="btn" id="loginBtn">Google Sign in</button>
+      </div>
+    </header>
+
+    <section class="gate" id="gate">
+      <div class="card">
+        <h2>লগ-ইন করে শুরু করো</h2>
+        <p>Google দিয়ে সাইন-ইন করলে তোমার চ্যাট Firestore-এ সেভ থাকবে। Guest মোডে শুধু ব্রাউজারে থাকবে।</p>
+        <div style="display:flex; gap:10px; margin-top:14px">
+          <button class="btn" id="loginBtn2">Sign in with Google</button>
+          <button class="btn secondary" id="guestBtn">Guest Mode</button>
+        </div>
+      </div>
+    </section>
+
+    <main class="chat" id="chat" style="display:none">
+      <div class="messages" id="messages"></div>
+      <div class="typing" id="typing" style="display:none">Bot is typing…</div>
+      <form class="row input" id="form">
+        <input id="text" class="text" placeholder="তোমার বার্তা লিখো…" autocomplete="off" />
+        <button class="btn send" id="sendBtn" type="submit">➤</button>
+      </form>
+    </main>
+
+    <footer class="subtitle" style="text-align:center">
+      © <span id="year"></span> AI mini ChatBot by Talha • Made with Firebase & Gemini
+    </footer>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDJ30k3wszDUdPk36g6QGNeatQzLgQdDiU",
+      authDomain: "e-commerce-f7ca6.firebaseapp.com",
+      projectId: "e-commerce-f7ca6",
+      storageBucket: "e-commerce-f7ca6.appspot.com",
+      messagingSenderId: "440939941324",
+      appId: "1:440939941324:web:638a952b995ae5914d6169"
+    };
+
+    const GEMINI_API_KEY = "AIzaSyCuJiwUzOBgBOYArAu-6rStNUWpaBI81Rg";
+    const GEMINI_MODEL = "gemini-1.5-flash";
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const gate = document.getElementById("gate");
+    const chat = document.getElementById("chat");
+    const messagesEl = document.getElementById("messages");
+    const typingEl = document.getElementById("typing");
+    const text = document.getElementById("text");
+    const profile = document.getElementById("profile");
+
+    let currentUser = null;
+    let guestMode = false;
+
+    const provider = new GoogleAuthProvider();
+    document.getElementById("loginBtn").onclick = ()=> signInWithPopup(auth, provider);
+    document.getElementById("loginBtn2").onclick = ()=> signInWithPopup(auth, provider);
+    document.getElementById("guestBtn").onclick = ()=> {
+      guestMode = true;
+      currentUser = { uid: "guest", displayName:"Guest" };
+      gate.style.display="none"; chat.style.display="grid";
+      loadGuestMessages();
+      renderSystemIntro();
+    };
+
+    onAuthStateChanged(auth, (user)=>{
+      if(user){
+        currentUser = user; guestMode = false;
+        gate.style.display="none"; chat.style.display="grid";
+        setupMessagesListener();
+      }
+    });
+
+    async function askGemini(history){
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          contents: history.map(m=>({
+            role: m.role==="user"?"user":"model",
+            parts:[{text:m.text}]
+          }))
+        })
+      });
+      const data = await res.json();
+      return data?.candidates?.[0]?.content?.parts?.[0]?.text || "⚠ কোনো উত্তর পাইনি।";
+    }
+
+    function renderMessage(m){
+      const div=document.createElement("div");
+      div.className="bubble "+(m.sender==="user"?"user":"bot");
+      div.innerHTML=`<div>${m.text}</div>`;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop=messagesEl.scrollHeight;
+    }
+
+    function renderSystemIntro(){
+      if(messagesEl.childElementCount===0){
+        renderMessage({sender:"bot", text:"হাই! আমি AI mini ChatBot by Talha. আমাকে প্রশ্ন করো।"});
+      }
+    }
+
+    function setupMessagesListener(){
+      const qy=query(collection(db,"chats",currentUser.uid,"messages"),orderBy("timestamp","asc"));
+      onSnapshot(qy,(snap)=>{
+        messagesEl.innerHTML="";
+        snap.forEach(doc=>renderMessage(doc.data()));
+      });
+    }
+
+    function loadGuestMessages(){
+      const msgs=JSON.parse(localStorage.getItem("guestMsgs")||"[]");
+      msgs.forEach(m=>renderMessage(m));
+    }
+    function saveGuestMessage(m){
+      let msgs=JSON.parse(localStorage.getItem("guestMsgs")||"[]");
+      msgs.push(m);
+      localStorage.setItem("guestMsgs",JSON.stringify(msgs));
+    }
+
+    document.getElementById("form").onsubmit=async(e)=>{
+      e.preventDefault();
+      const val=text.value.trim(); if(!val) return;
+      const userMsg={sender:"user",text:val,timestamp:new Date()};
+      renderMessage(userMsg);
+      if(guestMode){ saveGuestMessage(userMsg); }
+      else{ await addDoc(collection(db,"chats",currentUser.uid,"messages"),{...userMsg,timestamp:serverTimestamp()}); }
+      text.value="";
+      typingEl.style.display="block";
+      const reply=await askGemini([{role:"user",text:val}]);
+      const botMsg={sender:"bot",text:reply,timestamp:new Date()};
+      renderMessage(botMsg);
+      if(guestMode){ saveGuestMessage(botMsg); }
+      else{ await addDoc(collection(db,"chats",currentUser.uid,"messages"),{...botMsg,timestamp:serverTimestamp()}); }
+      typingEl.style.display="none";
+    };
+  </script>
+</body>
+</html>
